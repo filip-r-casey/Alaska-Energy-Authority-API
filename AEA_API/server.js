@@ -105,13 +105,25 @@ app.get("/wind_speed", (req, res) => {
     }
     return response_json;
   }
-  var sites = req.query.sites.split(",");
+  if (req.query.sites == null && req.query.lat == null) {
+    res.setHeader("Content-Type", "application/json");
+    res.status(400);
+    res.json({
+      status: 400,
+      title: "Insufficient request",
+      message:
+        "A request must include either a list of sites, or a location with latitude and longitude",
+    });
+  }
+  if (req.query.sites != null) {
+    var sites = req.query.sites.split(",");
+  }
   var start = req.query.start;
   var end = req.query.end;
   var lat = parseInt(req.query.lat);
   var lon = parseInt(req.query.lon);
-  var lat_threshold = parseInt(req.query.lat_threshold) || 0;
-  var lon_threshold = parseInt(req.query.lon_threshold) || 0;
+  var lat_threshold = parseInt(req.query.lat_threshold) || 1;
+  var lon_threshold = parseInt(req.query.lon_threshold) || 1;
 
   if (sites == null && lat != null && lon != null) {
     // Condition to search for sites if they are not provided
@@ -135,7 +147,6 @@ app.get("/wind_speed", (req, res) => {
         console.error(error);
       });
   } else if (sites != null) {
-    console.log(sites);
     db.any(
       `SELECT * FROM aea_sites INNER JOIN aea_prevailing_direction_data ON aea_sites.site_name = aea_prevailing_direction_data.site_name WHERE aea_sites.site_name IN ($1:list)`,
       [sites]
